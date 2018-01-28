@@ -8,11 +8,10 @@ try:
 except ImportError:
     from io import StringIO
 
-# A boolean flag to allow printer testing.
-allow_print_sample = False
-
 # A test pdf to test printer
-print_sample = 'http://unec.edu.az/application/uploads/2014/12/pdf-sample.pdf'
+print_sample_url = 'http://unec.edu.az/application/uploads/2014/12/pdf-sample.pdf'
+
+print_sample_text = 'The quick brown fox jumps over the lazy dog.'
 
 # The supported formats
 formats = ['pdf',
@@ -37,7 +36,7 @@ def print_file(file, remove):
         os.remove(file)
 
 
-def get_file(path_or_url, type_):
+def get_file(path_or_url, type_, is_test):
     """
     :param path_or_url: The path of the file or the url.
     :param type_: The file format.
@@ -47,8 +46,10 @@ def get_file(path_or_url, type_):
     if path_or_url.startswith('http'):
         if connection_test(path_or_url):
             file = 'temp.' + type_
-            urllib.request.urlretrieve(url_to_pdf, file)
+            urllib.request.urlretrieve(path_or_url, file)
             return file, True
+        elif is_test:
+            return make_def_file(), True
         else:
             return None, False
     else:
@@ -62,7 +63,7 @@ def validate_file(file):
     :return: isValid (boolean), format (string)
     """
     for format_ in formats:
-        if file.endswith('.' + format_):
+        if file.lower().endswith('.' + format_):
             return True, format_
 
     return False, None
@@ -82,13 +83,24 @@ def connection_test(url):
         return False
 
 
-if __name__ == '__main__':
+def make_def_file():
+    name = 'temp.txt'
+    file = open(name, 'w')
+    file.write(print_sample_text)
+    file.close()
+    return name
+
+
+def main():
+    is_test = False
     # check if there was an argument passed down
     if len(sys.argv) >= 2:
-        url_to_pdf = sys.argv[1]
-    # else check if sample printing is allowed
-    elif allow_print_sample:
-        url_to_pdf = print_sample
+        arg = sys.argv[1]
+        if arg is 'test':
+            url_to_pdf = print_sample_url
+            is_test = True
+        else:
+            url_to_pdf = arg
     # else do nothing
     else:
         url_to_pdf = ""
@@ -98,11 +110,15 @@ if __name__ == '__main__':
     # validate file format
     validation = validate_file(url_to_pdf)
     if validation[0]:
-        data = get_file(url_to_pdf, validation[1])
+        data = get_file(url_to_pdf, validation[1], is_test)
 
         if data[0] is not None:
             print_file(data[0], data[1])
         else:
-            print('Failed to connect to '+url_to_pdf)
+            print('Failed to connect to ' + url_to_pdf)
     else:
         print('Invalid file!')
+
+
+if __name__ == '__main__':
+    main()
