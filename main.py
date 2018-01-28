@@ -29,7 +29,7 @@ def print_file(file, remove):
     # call the system's lpr command
     p = Popen(["lpr -#1 " + file], shell=True)
     output = p.communicate()[0]
-    print(output)
+    print('Console Output: '+output)
 
     if remove:
         # delete file
